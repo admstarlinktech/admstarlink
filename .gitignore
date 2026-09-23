@@ -1,2 +1,4 @@
 node_modules/
 dados/*.json
+pkgs/*.apk
+qr-amostra.png
