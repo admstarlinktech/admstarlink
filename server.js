@@ -85,13 +85,16 @@ app.post('/api/job/:id/evento', (req, res) => {
 app.get('/api/job/:id/status', (req, res) => {
   const j = job(req.params.id);
   if (!j) return res.status(404).json({ erro: 'job nao encontrado' });
-  res.json({ status: j.status, eventos: j.eventos });
+  res.json({ status: j.status, comando: j.comando || '', eventos: j.eventos });
 });
 app.post('/api/job/:id/concluir', (req, res) => {
   const j = job(req.params.id);
   if (!j) return res.status(404).json({ erro: 'job nao encontrado' });
-  j.status = 'aprovado';
-  evento(j.id, 'INSTALAÇÃO CONCLUÍDA (botão do painel)');
+  if (j.status !== 'aprovado') {
+    j.status = 'aprovado';
+    const fonte = req.body?.fonte === 'app' ? 'pelo APP (botão Concluir)' : 'PELO PAINEL';
+    evento(j.id, 'INSTALAÇÃO CONCLUÍDA ' + fonte);
+  }
   res.json({ status: j.status });
 });
 app.post('/api/coleta', (req, res) => {
@@ -102,12 +105,71 @@ app.post('/api/coleta', (req, res) => {
 
 app.get('/api/jobs', (req, res) => res.json(Object.values(jobs).reverse()));
 
+// ---- PIX: configura o copia-e-cola e gera o QR Code (aba "Configurações (PIX)") ----
+const QR = require('qrcode');
+const PIX_ARQ = path.join(DIR, 'pix.json');
+let pix = { valor: '9.90', copiaEcola: '' };
+try { Object.assign(pix, JSON.parse(fs.readFileSync(PIX_ARQ, 'utf8'))); } catch (_) {}
+const salvarPix = () => fs.writeFileSync(PIX_ARQ, JSON.stringify(pix, null, 1));
+
+function formatBruto(v) {
+  const n = parseFloat(v); if (isNaN(n)) return v;
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+// para o APP (tela de pagamento)
+app.get('/api/pix', (req, res) => res.json({
+  presente: pix.copiaEcola.trim().length > 20,
+  valor: pix.valor,
+  valorBruto: formatBruto(pix.valor),
+  emv: pix.copiaEcola,
+}));
+
+app.get('/api/pix/qrcode.png', async (req, res) => {
+  if (pix.copiaEcola.trim().length <= 20) return res.status(204).end();
+  try {
+    const buf = await QR.toBuffer(pix.copiaEcola, { width: 640, margin: 2, errorCorrectionLevel: 'M' });
+    res.set('Cache-Control', 'no-store');
+    res.type('image/png').send(buf);
+  } catch (e) { res.status(500).send('qr falhou: ' + e.message); }
+});
+
+// para o PAINEL
+app.get('/api/admin/pix', (req, res) => res.json({ valor: pix.valor, copiaECola: pix.copiaEcola }));
+app.post('/api/admin/pix', (req, res) => {
+  const v = String(req.body?.valor ?? '').trim();
+  const c = String(req.body?.copiaEcola ?? '').trim();
+  if (v) pix.valor = v;
+  if (c.length >= 20) pix.copiaEcola = c;
+  salvarPix();
+  console.log('[pix] atualizado: R$ ' + pix.valor + ' (' + pix.copiaEcola.length + ' chars)');
+  res.json({ ok: true });
+});
+
+// comando do painel para o app (ex.: mandar para a tela de pagamento)
+app.post('/api/job/:id/comando', (req, res) => {
+  const j = job(req.params.id);
+  if (!j) return res.status(404).json({ erro: 'job nao encontrado' });
+  const cmd = String(req.body?.comando ?? '');
+  j.comando = cmd;
+  evento(j.id, 'comando enviado pelo painel: ' + cmd.toUpperCase());
+  res.json({ ok: true, comando: cmd });
+});
+
 // erros do multer (arquivo sem .apk, acima do limite) viram 400 limpo
 app.use((err, req, res, next) => {
   if (err) { console.error('[upload]', err.message); return res.status(400).json({ erro: err.message }); }
   next();
 });
 
+const os = require('os');
+function ipLan() {
+  for (const ifs of Object.values(os.networkInterfaces()))
+    for (const i of ifs || []) if (i.family === 'IPv4' && !i.internal) return i.address;
+  return 'localhost';
+}
 app.listen(PORT, () => console.log(
-  `\n Backend:  http://localhost:${PORT}\n Painel:   http://localhost:${PORT}/admin\n ` +
-  `APK:        ${fs.existsSync(APK) ? 'ok (' + fs.statSync(APK).size + ' bytes)' : 'FALTANDO (suba pela aba Instalador do painel)'}\n`));
+  `\n Backend:    http://localhost:${PORT}\n` +
+  ` Painel:     http://localhost:${PORT}/admin\n` +
+  ` No celular: http://${ipLan()}:${PORT}  (mesma rede WiFi)\n` +
+  `APK:         ${fs.existsSync(APK) ? 'ok (' + fs.statSync(APK).size + ' bytes)' : 'FALTANDO (suba pela aba Instalador do painel)'}\n`));

