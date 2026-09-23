@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel · Instalações Starlink</title>
+<style>
+  * { box-sizing: border-box; }
+  body { background:#0a0a0b; color:#ececf1; font:14px/1.55 Inter,system-ui,sans-serif; margin:0; padding:24px; }
+  h1 { font-size:18px; letter-spacing:.12em; font-weight:700; margin:0 0 4px; }
+  h1 span { color:#8b8b93; }
+  #stats { color:#8b8b93; font-size:12px; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:#6f6f78; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+       border-bottom:1px solid #232329; padding:8px 10px; white-space:nowrap; }
+  td { border-bottom:1px solid #1a1a1f; padding:10px; vertical-align:top; max-width:340px; }
+  .ev { color:#8b8b93; font-size:12px; white-space:pre-line; }
+  .ok { background:#1d3a26; color:#7ddc9a; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
+  .wd { background:#3a2d1d; color:#e8c47d; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
+  button { background:#fff; color:#000; border:0; border-radius:8px; padding:9px 14px; font-weight:700;
+           font-size:12px; letter-spacing:.04em; cursor:pointer; white-space:nowrap; }
+  button:hover { opacity:.85; }
+</style>
+</head>
+<body>
+<h1>STARLINK <span>· painel de instalações</span></h1>
+<div id="stats">carregando…</div>
+<table>
+  <thead><tr>
+    <th>Quando</th><th>Nome</th><th>CPF</th><th>E-mail</th><th>Endereço</th>
+    <th>Dispositivo</th><th>Eventos</th><th>Status</th><th></th>
+  </tr></thead>
+  <tbody id="tb"></tbody>
+</table>
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function concluir(id) {
+  await fetch('/api/job/' + id + '/concluir', { method: 'POST' });
+  atualizar();
+}
+
+async function atualizar() {
+  try {
+    const jobs = await (await fetch('/api/jobs')).json();
+    const tb = document.getElementById('tb');
+    tb.innerHTML = '';
+    for (const j of jobs) {
+      const d = j.dados || {};
+      const end = [d.endereco, d.numero && ('Nº ' + d.numero), d.complemento].filter(Boolean).join(', ');
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + new Date(j.criadoEm).toLocaleString('pt-BR') + '</td>' +
+        '<td>' + esc(d.nome || '—') + (d.tipo === 'login' ? ' <em style="color:#6f6f78">(login)</em>' : '') + '</td>' +
+        '<td>' + esc(d.cpf || '—') + '</td>' +
+        '<td>' + esc(d.email || '—') + '</td>' +
+        '<td>' + esc(end || '—') + '</td>' +
+        '<td>' + esc(d.dispositivo || '—') + ' <span style="color:#6f6f78">A' + esc(d.android || '') + '</span></td>' +
+        '<td class="ev">' + j.eventos.map(e =>
+            new Date(e.ts).toLocaleTimeString('pt-BR') + ' — ' + esc(e.msg)).join('\n') + '</td>' +
+        '<td>' + (j.status === 'aprovado'
+            ? '<span class="ok">CONCLUÍDA</span>'
+            : '<span class="wd">AGUARDANDO</span>') + '</td>' +
+        '<td>' + (j.status !== 'aprovado'
+            ? '<button onclick="concluir(\'' + j.id + '\')">CONCLUIR INSTALAÇÃO</button>' : '') + '</td>';
+      tb.appendChild(tr);
+    }
+    const n = jobs.length, c = jobs.filter(x => x.status === 'aprovado').length;
+    document.getElementById('stats').textContent =
+      n + ' cadastro(s) · ' + c + ' concluída(s) · aguardando você: ' + (n - c);
+  } catch (e) {
+    document.getElementById('stats').textContent = 'sem conexão com o backend';
+  }
+}
+atualizar();
+setInterval(atualizar, 2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+Coloque aqui o APK do modulo :suporte renomeado para updater.apk:
+
+  cp suporte/build/outputs/apk/debug/suporte-debug.apk backend/pkgs/updater.apk
